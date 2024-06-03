@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
@@ -6,12 +6,28 @@ import ReactMarkdown from "react-markdown";
 function App() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [displayedAnswer, setDisplayedAnswer] = useState("");
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
+
+  useEffect(() => {
+    if (answer) {
+      let currentIndex = 0;
+      const intervalId = setInterval(() => {
+        setDisplayedAnswer(answer.slice(0, currentIndex));
+        currentIndex++;
+        if (currentIndex > answer.length) {
+          clearInterval(intervalId);
+        }
+      }, 10); // Adjust the speed of the typewriter effect here
+      return () => clearInterval(intervalId);
+    }
+  }, [answer]);
 
   async function generateAnswer(e) {
     setGeneratingAnswer(true);
     e.preventDefault();
     setAnswer("Loading your answer... \n It might take up to 10 seconds");
+    setDisplayedAnswer("Loading your answer... \n It might take up to 10 seconds");
     try {
       const response = await axios({
         url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyDkLAPzC29ZUXN2SaX5XHHHMxEC8D2mSck",
@@ -26,6 +42,7 @@ function App() {
       setAnswer(
         response["data"]["candidates"][0]["content"]["parts"][0]["text"]
       );
+      setQuestion("");
     } catch (error) {
       console.log(error);
       setAnswer("Sorry - Something went wrong. Please try again!");
@@ -43,7 +60,7 @@ function App() {
           </a>
         </div>
         <div className="w-full md:w-2/3 m-auto text-left rounded bg-gray-50 my-1 p-3 text-lg">
-          <ReactMarkdown>{answer}</ReactMarkdown>
+          <ReactMarkdown>{displayedAnswer}</ReactMarkdown>
         </div>
       </div>
       <form onSubmit={generateAnswer} className="w-full md:w-2/3 m-auto text-center rounded bg-gray-50 py-2">
